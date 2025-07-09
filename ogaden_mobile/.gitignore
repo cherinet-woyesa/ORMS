@@ -1,45 +1,48 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
 # Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
 .dart_tool/
+.packages
+.pub-cache/
 .flutter-plugins
 .flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
+.melos_tool/
 
-# Symbolication related
+# Build outputs
+build/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/ServiceDefinitions.json
+
+# Obfuscation and symbol files
 app.*.symbols
 
-# Obfuscation related
-app.*.map.json
+# Android specific
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+*.keystore
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# iOS specific
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Flutter/Generated.xcconfig
+ios/.symlinks/
+ios/Flutter/App.framework
+ios/Flutter/engine/
+Flutter/ephemeral/
+
+# VS Code
+.vscode/
+
+# IntelliJ/Android Studio
+.idea/
+
+# Firebase configs (safe to ignore locally)
+firebase.json
+*.lock
+
+# Logs
+*.log
+
+# Others
+.env
