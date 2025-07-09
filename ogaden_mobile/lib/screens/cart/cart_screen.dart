@@ -1,44 +1,78 @@
 import 'package:flutter/material.dart';
-import 'package:ogaden_mobile/screens/payment/payment_screen.dart';
 import 'package:provider/provider.dart';
+import '../../models/cart_item_model.dart';
 import '../../providers/cart_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'order_status_screen.dart'; // ✅ Add this line
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
 
+  void placeOrder(
+    BuildContext context,
+    List<CartItem> items,
+    double total,
+  ) async {
+    final db = FirebaseFirestore.instance;
+
+    final order = {
+      "items": items
+          .map(
+            (item) => {
+              "name": item.item.name,
+              "price": item.item.price,
+              "quantity": item.quantity,
+            },
+          )
+          .toList(),
+      "total": total,
+      "timestamp": FieldValue.serverTimestamp(),
+      "status": "pending",
+    };
+
+    try {
+      await db.collection("orders").add(order);
+      Provider.of<CartProvider>(context, listen: false).clearCart();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Order placed successfully!")),
+      );
+      Navigator.pop(context); // Go back to home/menu
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("❌ Failed to place order.")));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
+    final items = cart.items;
+    final total = cart.totalPrice;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Your Cart')),
-      body: cart.items.isEmpty
-          ? const Center(child: Text('Cart is empty 🛒'))
+      appBar: AppBar(title: const Text("🛒 Your Cart")),
+      body: items.isEmpty
+          ? const Center(child: Text("Your cart is empty."))
           : Column(
               children: [
                 Expanded(
                   child: ListView.builder(
-                    itemCount: cart.items.length,
+                    itemCount: items.length,
                     itemBuilder: (context, index) {
-                      final cartItem = cart.items[index];
+                      final item = items[index];
                       return ListTile(
-                        leading: Image.network(
-                          cartItem.item.imageUrl,
-                          width: 50,
+                        leading: const Icon(Icons.fastfood),
+                        title: Text(item.item.name),
+                        subtitle: Text(
+                          "ETB ${item.item.price} × ${item.quantity}",
                         ),
-                        title: Text(cartItem.item.name),
-                        subtitle: Text("Qty: ${cartItem.quantity}"),
-                        trailing: Column(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.add),
-                              onPressed: () => cart.increaseQuantity(cartItem),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.remove),
-                              onPressed: () => cart.decreaseQuantity(cartItem),
-                            ),
-                          ],
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            cart.removeItem(item.item as CartItem);
+                          },
                         ),
                       );
                     },
@@ -49,30 +83,21 @@ class CartScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       Text(
-                        "Total: \$${cart.totalPrice.toStringAsFixed(2)}",
+                        "Total: ETB ${NumberFormat("#,##0.00").format(total)}",
                         style: const TextStyle(
-                          fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const PaymentScreen(),
-                            ),
-                          );
-                          // Navigate to payment screen
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Proceeding to payment..."),
-                            ),
-                          );
-                          // TODO: Navigate to payment screen
-                        },
-                        child: const Text("Checkout"),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        onPressed: () => placeOrder(context, items, total),
+                        icon: const Icon(Icons.check_circle_outline),
+                        label: const Text("Place Order"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          minimumSize: const Size.fromHeight(50),
+                        ),
                       ),
                     ],
                   ),
