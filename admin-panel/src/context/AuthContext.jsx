@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() =>
     onAuthStateChanged(auth, user => {
+      console.log("onAuthStateChanged fired. User:", user);
       setCurrentUser(user);
       setLoading(false);
     }), []);

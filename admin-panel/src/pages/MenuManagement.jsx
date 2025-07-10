@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   collection,
   addDoc,
@@ -6,107 +6,143 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, storage } from "../firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import AdminLayout from "../components/AdminLayout";
+const MenuPage = () => {
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [image, setImage] = useState(null);
+  const [menus, setMenus] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-export default function MenuManagement() {
-  const [menuItems, setMenuItems] = useState([]);
-  const [form, setForm] = useState({ name: "", price: "", description: "" });
+  const menuCollection = collection(db, "menus");
 
-  const fetchMenu = async () => {
-    const querySnapshot = await getDocs(collection(db, "menus"));
-    const items = querySnapshot.docs.map((doc) => ({
+  useEffect(() => {
+    fetchMenus();
+  }, []);
+
+  const fetchMenus = async () => {
+    const snapshot = await getDocs(menuCollection);
+    const items = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
-    setMenuItems(items);
+    setMenus(items);
   };
 
-  useEffect(() => {
-    fetchMenu();
-  }, []);
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleImageUpload = async () => {
+    if (!image) return null;
+    const storageRef = ref(storage, `menuImages/${image.name}-${Date.now()}`);
+    const snapshot = await uploadBytes(storageRef, image);
+    const url = await getDownloadURL(snapshot.ref);
+    return url;
   };
 
-  const handleSubmit = async (e) => {
+  const handleAddItem = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.price) return;
-    await addDoc(collection(db, "menus"), {
-      name: form.name,
-      price: parseFloat(form.price),
-      description: form.description,
-    });
-    setForm({ name: "", price: "", description: "" });
-    fetchMenu(); // refresh list
+    setLoading(true);
+
+    try {
+      const imageUrl = await handleImageUpload();
+
+      await addDoc(menuCollection, {
+        name,
+        price: parseFloat(price),
+        description,
+        imageUrl,
+        createdAt: new Date(),
+      });
+
+      setName("");
+      setPrice("");
+      setDescription("");
+      setImage(null);
+      fetchMenus();
+    } catch (err) {
+      console.error("Error adding menu item:", err);
+    }
+
+    setLoading(false);
   };
 
-  const deleteItem = async (id) => {
+  const handleDelete = async (id) => {
     await deleteDoc(doc(db, "menus", id));
-    fetchMenu();
+    fetchMenus();
   };
 
   return (
     <AdminLayout>
-      <h1 className="text-3xl font-bold mb-6">🍽️ Menu Management</h1>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">🍽️ Menu Management</h2>
 
-      {/* Add New Item Form */}
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow mb-8 space-y-4 max-w-xl">
-        <div>
-          <label className="block mb-1 font-medium">Item Name</label>
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1 font-medium">Price (ETB)</label>
-          <input
-            name="price"
-            type="number"
-            value={form.price}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1 font-medium">Description (optional)</label>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
-        </div>
+      <form
+        onSubmit={handleAddItem}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-white p-6 rounded shadow"
+      >
+        <input
+          type="text"
+          placeholder="Food Name"
+          className="border p-2 rounded"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <input
+          type="number"
+          placeholder="Price (ETB)"
+          className="border p-2 rounded"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          required
+        />
+        <textarea
+          placeholder="Description"
+          className="border p-2 rounded md:col-span-2"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+        />
+        <input
+          type="file"
+          className="md:col-span-2"
+          onChange={(e) => setImage(e.target.files[0])}
+        />
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          disabled={loading}
+          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 md:col-span-2"
         >
-          Add Menu Item
+          {loading ? "Adding..." : "Add Item"}
         </button>
       </form>
 
-      {/* List of Menu Items */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {menuItems.map((item) => (
-          <div key={item.id} className="bg-white p-5 shadow rounded relative">
-            <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
-            <p className="text-gray-500 mb-2">{item.description}</p>
-            <p className="font-bold text-green-600">ETB {item.price}</p>
+      <h3 className="text-xl font-semibold mb-3">📋 Menu Items</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {menus.map((item) => (
+          <div key={item.id} className="border p-4 rounded shadow-sm bg-white">
+            <img
+              src={item.imageUrl}
+              alt={item.name}
+              className="h-40 w-full object-cover rounded"
+            />
+            <h4 className="text-lg font-bold mt-2">{item.name}</h4>
+            <p className="text-sm text-gray-700">{item.description}</p>
+            <p className="text-purple-700 font-semibold">ETB {item.price}</p>
             <button
-              onClick={() => deleteItem(item.id)}
-              className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm"
+              onClick={() => handleDelete(item.id)}
+              className="mt-2 text-red-600 hover:underline text-sm"
             >
-              ✖
+              Delete
             </button>
           </div>
         ))}
       </div>
+    </div>
     </AdminLayout>
+
   );
-}
+};
+
+export default MenuPage;
