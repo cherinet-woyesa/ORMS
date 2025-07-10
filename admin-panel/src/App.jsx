@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import SignUp from "./pages/SignUp"; 
 import MenuManagement from "./pages/MenuManagement";
 
+
 function App() {
   return (
     <BrowserRouter>
