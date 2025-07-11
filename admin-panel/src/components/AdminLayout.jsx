@@ -28,6 +28,12 @@ export default function AdminLayout({ children }) {
           >
             🍽️ Menu Management
           </Link>
+          <Link
+            to="/reservations"
+            className="text-gray-700 hover:bg-blue-100 px-3 py-2 rounded"
+          >
+            🍽️ Reservation Management
+          </Link>
           <button
             onClick={handleLogout}
             className="mt-4 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded"

@@ -4,11 +4,15 @@ import '../models/restaurant_model.dart';
 class RestaurantCard extends StatelessWidget {
   final Restaurant restaurant;
   final VoidCallback onTap;
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
 
   const RestaurantCard({
     super.key,
     required this.restaurant,
     required this.onTap,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
   });
 
   @override
@@ -22,17 +26,39 @@ class RestaurantCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-              child: Image.network(
-                restaurant.imageUrl,
-                height: 160,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+            // Image with favorite button overlay
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
+                  child: Image.network(
+                    restaurant.imageUrl,
+                    height: 160,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: onFavoriteToggle,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white.withOpacity(0.85),
+                        child: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorite ? Colors.red : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             // Info
             Padding(

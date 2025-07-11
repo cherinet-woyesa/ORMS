@@ -4,7 +4,7 @@ import '../../models/cart_item_model.dart';
 import '../../providers/cart_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'order_status_screen.dart'; // ✅ Add this line
+// ✅ Add this line
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});

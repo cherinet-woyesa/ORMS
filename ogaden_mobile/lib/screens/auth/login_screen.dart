@@ -35,45 +35,70 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Center(
+          : Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 24.0),
                 child: Form(
                   key: _formKey,
-                  child: ListView(
-                    shrinkWrap: true,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Login to Ogaden',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      // Logo or Avatar
+                      CircleAvatar(
+                        radius: 44,
+                        backgroundColor: theme.primaryColor.withOpacity(0.1),
+                        child: Icon(Icons.lock_outline, size: 48, color: theme.primaryColor),
+                      ),
+                      const SizedBox(height: 24),
+                      // Title
+                      Text(
+                        'Welcome Back',
+                        style: theme.textTheme.headline5?.copyWith(fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 40),
-
+                      const SizedBox(height: 8),
+                      Text(
+                        'Login to Ogaden',
+                        style: theme.textTheme.subtitle1?.copyWith(color: Colors.grey[700]),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
                       // Email
                       TextFormField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Email',
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
                         ),
                         validator: (val) => val!.isEmpty || !val.contains('@')
                             ? 'Enter a valid email'
                             : null,
                         onChanged: (val) => email = val.trim(),
+                        keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 20),
-
                       // Password
                       TextFormField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Password',
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
                         ),
                         obscureText: true,
                         validator: (val) => val!.length < 6
@@ -81,24 +106,65 @@ class _LoginScreenState extends State<LoginScreen> {
                             : null,
                         onChanged: (val) => password = val.trim(),
                       ),
-                      const SizedBox(height: 30),
-
-                      ElevatedButton(
-                        onPressed: _loginUser,
-                        child: const Text('Login'),
+                      const SizedBox(height: 8),
+                      // Forgot password (future)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {},
+                          child: const Text('Forgot password?', style: TextStyle(color: Colors.grey)),
+                        ),
                       ),
                       const SizedBox(height: 10),
-
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
+                      // Login Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _loginUser,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                          );
-                        },
-                        child: const Text("Don't have an account? Register"),
+                            elevation: 2,
+                          ),
+                          child: const Text('Login', style: TextStyle(fontSize: 16)),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      // Divider with text
+                      Row(
+                        children: [
+                          const Expanded(child: Divider(thickness: 1, endIndent: 8)),
+                          Text('or', style: TextStyle(color: Colors.grey[600])),
+                          const Expanded(child: Divider(thickness: 1, indent: 8)),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      // Register Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const RegisterScreen(),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            side: BorderSide(color: theme.primaryColor),
+                          ),
+                          child: Text(
+                            "Don't have an account? Register",
+                            style: TextStyle(color: theme.primaryColor, fontSize: 15),
+                          ),
+                        ),
                       ),
                     ],
                   ),

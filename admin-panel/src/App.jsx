@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import SignUp from "./pages/SignUp"; 
 import MenuManagement from "./pages/MenuManagement";
+import ReservationManagement from "./pages/ReservationManagement";
 
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
           <Route path="/signup" element={<SignUp />} /> {/* ✅ */}
           <Route path="/admin" element={<Dashboard />} />
           <Route path="/menu" element={<MenuManagement />} />
+          <Route path="/reservations" element={<ReservationManagement />} />
           {/* Add more routes as needed */}
           <Route path="*" element={<h1>404 Not Found</h1>} />
         </Routes>
