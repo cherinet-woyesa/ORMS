@@ -57,13 +57,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Title
                       Text(
                         'Welcome Back',
-                        style: theme.textTheme.headline5?.copyWith(fontWeight: FontWeight.bold),
+                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Login to Ogaden',
-                        style: theme.textTheme.subtitle1?.copyWith(color: Colors.grey[700]),
+                        style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey[700]),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
