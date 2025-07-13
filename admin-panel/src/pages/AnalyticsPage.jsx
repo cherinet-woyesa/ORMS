@@ -5,10 +5,9 @@ import {
   query,
   where,
   orderBy,
-  startOfDay,
-  endOfDay,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { startOfDay, endOfDay } from "date-fns";
 import {
   BarChart,
   Bar,

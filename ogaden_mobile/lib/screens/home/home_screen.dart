@@ -62,17 +62,32 @@ class _HomeScreenState extends State<HomeScreen> {
     final restaurants = getRestaurants();
     final filteredRestaurants = restaurants.where((restaurant) {
       final query = searchQuery.toLowerCase();
-      final matchesSearch = restaurant.name.toLowerCase().contains(query) ||
+      final matchesSearch =
+          restaurant.name.toLowerCase().contains(query) ||
           restaurant.cuisine.toLowerCase().contains(query);
-      final matchesCuisine = selectedCuisine == null ||
-          restaurant.cuisine.toLowerCase().contains(selectedCuisine!.toLowerCase());
+      final matchesCuisine =
+          selectedCuisine == null ||
+          restaurant.cuisine.toLowerCase().contains(
+            selectedCuisine!.toLowerCase(),
+          );
       return matchesSearch && matchesCuisine;
     }).toList();
 
     final cuisines = getCuisines();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Ogaden Restaurants")),
+      appBar: AppBar(
+        title: const Text("Ogaden Restaurants"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: 'Profile',
+            onPressed: () {
+              Navigator.pushNamed(context, '/profile');
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
@@ -92,6 +107,16 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
+
+          ElevatedButton(
+            onPressed: () => Navigator.pushNamed(context, '/orders'),
+            child: const Text("View My Orders"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pushNamed(context, '/orders'),
+            child: const Text("View My Orders"),
+          ),
+
           SizedBox(
             height: 48,
             child: ListView.separated(
@@ -137,7 +162,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               Center(
                                 child: Text(
                                   'No restaurants found.',
-                                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                               ),
                             ],
@@ -146,16 +174,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             itemCount: filteredRestaurants.length,
                             itemBuilder: (context, index) {
                               final restaurant = filteredRestaurants[index];
-                              final isFavorite = favoriteRestaurantNames.contains(restaurant.name);
+                              final isFavorite = favoriteRestaurantNames
+                                  .contains(restaurant.name);
                               return RestaurantCard(
                                 restaurant: restaurant,
                                 isFavorite: isFavorite,
                                 onFavoriteToggle: () {
                                   setState(() {
                                     if (isFavorite) {
-                                      favoriteRestaurantNames.remove(restaurant.name);
+                                      favoriteRestaurantNames.remove(
+                                        restaurant.name,
+                                      );
                                     } else {
-                                      favoriteRestaurantNames.add(restaurant.name);
+                                      favoriteRestaurantNames.add(
+                                        restaurant.name,
+                                      );
                                     }
                                   });
                                 },
@@ -163,8 +196,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) =>
-                                          MenuScreen(restaurantName: restaurant.name),
+                                      builder: (_) => MenuScreen(
+                                        restaurantName: restaurant.name,
+                                      ),
                                     ),
                                   );
                                 },

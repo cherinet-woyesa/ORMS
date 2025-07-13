@@ -59,6 +59,11 @@ class _ReservationScreenState extends State<ReservationScreen> {
       );
       return;
     }
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/reservation-success',
+      (route) => false,
+    );
 
     setState(() => _loading = true);
 
