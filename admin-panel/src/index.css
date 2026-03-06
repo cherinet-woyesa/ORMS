@@ -2,3 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .btn-primary {
+    @apply bg-orange-500 hover:bg-orange-600 shadow-sm hover:shadow-md text-white font-medium py-2 px-4 rounded-lg transition-all;
+  }
+  
+  .btn-secondary {
+    @apply bg-amber-500 hover:bg-amber-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+  
+  .btn-success {
+    @apply bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+  
+  .btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-orange-500 text-orange-500 hover:bg-orange-50 font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+
+  .page-container {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-5 hover:shadow-md transition-shadow;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:bg-white transition-all;
+  }
+
+  .table-header {
+    @apply bg-orange-50 text-orange-800 font-semibold uppercase tracking-wider text-xs;
+  }
+
+  .table-row-hover {
+    @apply hover:bg-gray-50;
+  }
+}
+
+/* Global styles */
+main {
+  background-color: #ffffff;
+}
+
+.bg-white {
+  background-color: #ffffff;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+.table-responsive {
+  @apply overflow-x-auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+  @apply min-w-full;
+}
+
+@media (max-width: 768px) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-success,
+  .btn-danger,
+  .btn-outline {
+    @apply py-3 px-4;
+  }
+  
+  .page-container,
+  .card {
+    @apply p-4;
+  }
+}

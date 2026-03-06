@@ -1,0 +1,61 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "orderType",
+          "order": "ASC"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESC"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASC"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESC"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASC"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESC"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reservations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASC"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASC"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

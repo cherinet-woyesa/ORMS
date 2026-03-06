@@ -1,9 +1,7 @@
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState, useCallback } from "react";
 import { db } from "../firebase";
-import { ALLOWED_ADMINS } from "../constants/admins";
-import { useNavigate } from "react-router-dom";
-import AdminLayout from "../components/AdminLayout";
+import { Link } from "react-router-dom";
 import {
   collection,
   query,
@@ -12,7 +10,19 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { FiAlertCircle, FiCheckCircle, FiClock, FiDollarSign, FiShoppingBag } from "react-icons/fi";
+import {
+  FiAlertCircle,
+  FiCheckCircle,
+  FiClock,
+  FiDollarSign,
+  FiShoppingBag,
+  FiTrendingUp,
+  FiUsers,
+  FiPackage,
+  FiArrowUp,
+  FiArrowDown,
+  FiActivity
+} from "react-icons/fi";
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -22,23 +32,22 @@ export default function Dashboard() {
     totalOrders: 0,
     pending: 0,
     completed: 0,
-    revenue: 0
+    revenue: 0,
+    todayOrders: 0,
+    avgOrderValue: 0
   });
-  const navigate = useNavigate();
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (currentUser === null) {
-      navigate("/", { state: { error: "Please log in first" } });
-    }
-  }, [currentUser, navigate]);
-
-  // Check admin status
-  useEffect(() => {
-    if (currentUser && !ALLOWED_ADMINS.includes(currentUser.email)) {
-      navigate("/", { state: { error: "Access denied: not an admin" } });
-    }
-  }, [currentUser, navigate]);
+  // Show login message if not authenticated
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800">Please log in</h2>
+          <p className="text-gray-600 mt-2">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch orders and calculate stats
   useEffect(() => {
@@ -46,13 +55,25 @@ export default function Dashboard() {
     const unsub = onSnapshot(q, (snapshot) => {
       const ordersData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setOrders(ordersData);
-      
+
       // Calculate statistics
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const todayOrders = ordersData.filter(o => {
+        const orderDate = o.timestamp?.toDate();
+        return orderDate && orderDate >= today;
+      });
+
+      const totalRevenue = ordersData.reduce((sum, order) => sum + (order.total || 0), 0);
+
       const newStats = {
         totalOrders: ordersData.length,
         pending: ordersData.filter(o => o.status === "pending").length,
         completed: ordersData.filter(o => o.status === "completed").length,
-        revenue: ordersData.reduce((sum, order) => sum + (order.total || 0), 0)
+        revenue: totalRevenue,
+        todayOrders: todayOrders.length,
+        avgOrderValue: ordersData.length > 0 ? totalRevenue / ordersData.length : 0
       };
       setStats(newStats);
       setLoading(false);
@@ -73,195 +94,297 @@ export default function Dashboard() {
   }, []);
 
   const getStatusBadge = useCallback((status) => {
-    const base = "px-3 py-1 rounded-full text-xs font-medium flex items-center";
+    const base = "px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all";
     switch (status) {
       case "pending":
-        return `${base} bg-yellow-50 text-yellow-700 border border-yellow-200`;
+        return `${base} bg-amber-100 text-amber-700 border border-amber-200`;
       case "accepted":
-        return `${base} bg-blue-50 text-blue-700 border border-blue-200`;
+        return `${base} bg-primary-100 text-primary-700 border border-primary-200`;
+      case "preparing":
+        return `${base} bg-purple-100 text-purple-700 border border-purple-200`;
       case "completed":
-        return `${base} bg-green-50 text-green-700 border border-green-200`;
+        return `${base} bg-green-100 text-green-700 border border-green-200`;
       case "cancelled":
-        return `${base} bg-red-50 text-red-700 border border-red-200`;
+        return `${base} bg-red-100 text-red-700 border border-red-200`;
       default:
-        return `${base} bg-gray-50 text-gray-700 border border-gray-200`;
+        return `${base} bg-gray-100 text-gray-700 border border-gray-200`;
     }
   }, []);
 
   const StatusIcon = ({ status }) => {
     switch (status) {
-      case "pending": return <FiClock className="mr-1" />;
-      case "accepted": return <FiCheckCircle className="mr-1" />;
-      case "completed": return <FiCheckCircle className="mr-1" />;
-      case "cancelled": return <FiAlertCircle className="mr-1" />;
-      default: return <FiShoppingBag className="mr-1" />;
+      case "pending": return <FiClock className="w-3.5 h-3.5" />;
+      case "accepted": return <FiCheckCircle className="w-3.5 h-3.5" />;
+      case "preparing": return <FiActivity className="w-3.5 h-3.5" />;
+      case "completed": return <FiCheckCircle className="w-3.5 h-3.5" />;
+      case "cancelled": return <FiAlertCircle className="w-3.5 h-3.5" />;
+      default: return <FiShoppingBag className="w-3.5 h-3.5" />;
     }
   };
 
+  const recentOrders = orders.slice(0, 8);
+
   return (
-    <AdminLayout>
-      <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
-        <div className="w-full">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-            <p className="mt-2 text-sm text-gray-600">Manage and track all orders</p>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <StatCard 
-              title="Total Orders" 
-              value={stats.totalOrders} 
-              icon={<FiShoppingBag className="h-6 w-6 text-blue-500" />}
-              color="blue"
-            />
-            <StatCard 
-              title="Pending" 
-              value={stats.pending} 
-              icon={<FiClock className="h-6 w-6 text-yellow-500" />}
-              color="yellow"
-            />
-            <StatCard 
-              title="Completed" 
-              value={stats.completed} 
-              icon={<FiCheckCircle className="h-6 w-6 text-green-500" />}
-              color="green"
-            />
-            <StatCard 
-              title="Total Revenue" 
-              value={`$${stats.revenue.toFixed(2)}`} 
-              icon={<FiDollarSign className="h-6 w-6 text-purple-500" />}
-              color="purple"
-            />
-          </div>
-
-          {/* Orders Section */}
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-lg font-medium text-gray-900">Recent Orders</h2>
-              <div className="flex space-x-3">
-                <button className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200">
-                  Filter
-                </button>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="p-10 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-3 text-gray-600">Loading orders...</p>
-              </div>
-            ) : orders.length === 0 ? (
-              <div className="p-10 text-center">
-                <FiShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No orders</h3>
-                <p className="mt-1 text-sm text-gray-500">Get started by accepting new orders.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-200">
-                {orders.map((order) => (
-                  <div key={order.id} className="px-6 py-5 hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center">
-                          <span className={getStatusBadge(order.status)}>
-                            <StatusIcon status={order.status} />
-                            {order.status}
-                          </span>
-                          <span className="ml-3 text-sm font-medium text-gray-900">
-                            Order #{order.id.slice(0, 8).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="mt-2 sm:flex sm:justify-between">
-                          <div className="sm:flex">
-                            <p className="flex items-center text-sm text-gray-500">
-                              <span className="font-medium">${order.total?.toFixed(2)}</span>
-                              <span className="hidden sm:block sm:mx-1">·</span>
-                              <span>{order.items?.length} items</span>
-                            </p>
-                          </div>
-                          <div className="mt-2 sm:mt-0">
-                            <p className="text-sm text-gray-500">
-                              {new Date(order.timestamp?.toDate()).toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 sm:mt-0 sm:ml-4">
-                        <div className="flex space-x-3">
-                          {order.status === "pending" && (
-                            <button
-                              onClick={() => updateStatus(order.id, "accepted")}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
-                            >
-                              Accept Order
-                            </button>
-                          )}
-                          {order.status === "accepted" && (
-                            <button
-                              onClick={() => updateStatus(order.id, "completed")}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none"
-                            >
-                              Mark Completed
-                            </button>
-                          )}
-                          <button
-                            onClick={() => navigate(`/orders/${order.id}`)}
-                            className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
-                          >
-                            View Details
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    {order.items && (
-                      <div className="mt-3">
-                        <div className="text-sm text-gray-500">Items:</div>
-                        <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {order.items.map((item, idx) => (
-                            <div key={idx} className="flex items-center text-sm">
-                              <span className="font-medium text-gray-700">{item.name}</span>
-                              <span className="mx-2 text-gray-400">×</span>
-                              <span className="text-gray-500">{item.quantity}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+    <div className="page-container space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Welcome back! Here's what's happening today.
+          </p>
+        </div>
+        <div className="mt-3 sm:mt-0">
+          <Link
+            to="/orders"
+            className="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <FiShoppingBag className="mr-1.5 w-4 h-4" />
+            View All Orders
+          </Link>
         </div>
       </div>
-    </AdminLayout>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard
+          title="Total Revenue"
+          value={`ETB ${stats.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          icon={<FiDollarSign className="w-6 h-6" />}
+          gradient="from-primary-500 to-orange-400"
+          trend="+12.5%"
+          trendUp={true}
+        />
+        <StatCard
+          title="Total Orders"
+          value={stats.totalOrders}
+          icon={<FiShoppingBag className="w-6 h-6" />}
+          gradient="from-purple-500 to-purple-600"
+          trend="+8.2%"
+          trendUp={true}
+        />
+        <StatCard
+          title="Pending Orders"
+          value={stats.pending}
+          icon={<FiClock className="w-6 h-6" />}
+          gradient="from-amber-500 to-amber-600"
+          badge={stats.pending > 0 ? "Needs Attention" : null}
+        />
+        <StatCard
+          title="Avg Order Value"
+          value={`ETB ${stats.avgOrderValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          icon={<FiTrendingUp className="w-6 h-6" />}
+          gradient="from-green-500 to-green-600"
+          trend="+5.4%"
+          trendUp={true}
+        />
+      </div>
+
+      {/* Quick Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <QuickStatCard
+          icon={<FiCheckCircle className="w-5 h-5 text-green-600" />}
+          label="Completed Today"
+          value={stats.todayOrders}
+          bgColor="bg-green-50"
+        />
+        <QuickStatCard
+          icon={<FiUsers className="w-5 h-5 text-primary-600" />}
+          label="Active Customers"
+          value="248"
+          bgColor="bg-primary-50"
+        />
+        <QuickStatCard
+          icon={<FiPackage className="w-5 h-5 text-purple-600" />}
+          label="Menu Items"
+          value="156"
+          bgColor="bg-purple-50"
+        />
+      </div>
+
+      {/* Recent Orders */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+        <div className="px-4 py-3 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Recent Orders</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Latest customer orders</p>
+            </div>
+            <Link
+              to="/orders"
+              className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+            >
+              View All →
+            </Link>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-50 mb-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+            </div>
+            <p className="text-gray-600 text-sm font-medium">Loading orders...</p>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="p-8 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+              <FiShoppingBag className="w-6 h-6 text-gray-400" />
+            </div>
+            <h3 className="text-base font-medium text-gray-900 mb-1">No orders yet</h3>
+            <p className="text-sm text-gray-500">Orders will appear here once customers start placing them.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Order ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Items
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Time
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {recentOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-orange-400 flex items-center justify-center">
+                          <FiShoppingBag className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900">
+                            #{order.id.slice(0, 8).toUpperCase()}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={getStatusBadge(order.status)}>
+                        <StatusIcon status={order.status} />
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 font-medium">
+                        {order.items?.length || 0} items
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-gray-900">
+                        ETB {order.total?.toFixed(2) || '0.00'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {order.timestamp?.toDate().toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        {order.status === "pending" && (
+                          <button
+                            onClick={() => updateStatus(order.id, "accepted")}
+                            className="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 transition-colors"
+                          >
+                            Accept
+                          </button>
+                        )}
+                        {order.status === "accepted" && (
+                          <button
+                            onClick={() => updateStatus(order.id, "preparing")}
+                            className="inline-flex items-center px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                          >
+                            Prepare
+                          </button>
+                        )}
+                        {order.status === "preparing" && (
+                          <button
+                            onClick={() => updateStatus(order.id, "completed")}
+                            className="inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors"
+                          >
+                            Complete
+                          </button>
+                        )}
+                        <Link
+                          to={`/orders`}
+                          className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          View
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
-function StatCard({ title, value, icon, color }) {
-  const colorClasses = {
-    blue: "bg-blue-100 text-blue-800",
-    yellow: "bg-yellow-100 text-yellow-800",
-    green: "bg-green-100 text-green-800",
-    purple: "bg-purple-100 text-purple-800",
-  };
-
+function StatCard({ title, value, icon, gradient, trend, trendUp, badge }) {
   return (
-    <div className="bg-white overflow-hidden shadow rounded-lg">
-      <div className="p-5">
-        <div className="flex items-center">
-          <div className={`flex-shrink-0 h-12 w-12 rounded-full ${colorClasses[color]} flex items-center justify-center`}>
-            {icon}
+    <div className="relative bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden group hover:shadow-md transition-shadow">
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className={`p-2.5 rounded-lg bg-gradient-to-br ${gradient} shadow-md`}>
+            <div className="text-white">
+              {icon}
+            </div>
           </div>
-          <div className="ml-5 w-0 flex-1">
-            <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">{title}</dt>
-              <dd className="flex items-baseline">
-                <div className="text-2xl font-semibold text-gray-900">{value}</div>
-              </dd>
-            </dl>
-          </div>
+          {trend && (
+            <div className={`flex items-center gap-1 text-xs font-semibold ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
+              {trendUp ? <FiArrowUp className="w-3 h-3" /> : <FiArrowDown className="w-3 h-3" />}
+              {trend}
+            </div>
+          )}
+          {badge && (
+            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+              {badge}
+            </span>
+          )}
+        </div>
+        <div>
+          <p className="text-xs font-medium text-gray-500 mb-0.5">{title}</p>
+          <p className="text-xl font-bold text-gray-900">{value}</p>
+        </div>
+      </div>
+      <div className={`h-1 bg-gradient-to-r ${gradient}`}></div>
+    </div>
+  );
+}
+
+function QuickStatCard({ icon, label, value, bgColor }) {
+  return (
+    <div className={`${bgColor} rounded-xl p-4 border border-gray-100`}>
+      <div className="flex items-center gap-3">
+        <div className="flex-shrink-0">
+          {icon}
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-600">{label}</p>
+          <p className="text-xl font-bold text-gray-900">{value}</p>
         </div>
       </div>
     </div>

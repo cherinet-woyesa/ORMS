@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+    function isStaff() {
+      return isAuthenticated() && request.auth.token.role in ['admin', 'manager', 'staff', 'driver'];
+    }
+    function isDriver() {
+      return isAuthenticated() && request.auth.token.role == 'driver';
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+    
+    // Restaurants collection
+    match /restaurants/{restaurantId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Menu items
+    match /restaurants/{restaurantId}/menu/{menuItemId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+    }
+    
+    // Categories
+    match /restaurants/{restaurantId}/categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+    }
+    
+    // Orders - customers can read their own, staff can read all
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && 
+        (request.auth.uid == resource.data.userId || isStaff());
+      allow create: if isAuthenticated();
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+    
+    // Reservations
+    match /reservations/{reservationId} {
+      allow read: if isAuthenticated() && 
+        (request.auth.uid == resource.data.userId || isStaff());
+      allow create: if isAuthenticated();
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+    
+    // Tables
+    match /tables/{tableId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+    }
+    
+    // Staff
+    match /staff/{staffId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Reviews
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin() || request.auth.uid == resource.data.userId;
+    }
+    
+    // Inventory
+    match /inventory/{itemId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+    }
+    
+    // Promotions
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Gift Cards
+    match /giftCards/{cardId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isStaff();
+    }
+    
+    // Waitlist
+    match /waitlist/{entryId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isStaff();
+    }
+    
+    // Scheduled Orders
+    match /scheduledOrders/{orderId} {
+      allow read: if isAuthenticated() && 
+        (request.auth.uid == resource.data.userId || isStaff());
+      allow create: if isAuthenticated();
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+    
+    // Driver locations (real-time)
+    match /driverLocations/{driverId} {
+      allow read: if isStaff();
+      allow write: if isDriver();
+    }
+    
+    // FCM tokens for push notifications
+    match /fcmTokens/{tokenId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow delete: if isOwner(tokenId) || isAdmin();
+    }
+  }
+}

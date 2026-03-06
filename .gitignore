@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+admin-panel/dist/
+admin-panel/build/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# Flutter
+ogaden_mobile/.dart_tool/
+ogaden_mobile/.flutter-plugins
+ogaden_mobile/.flutter-plugins-dependencies
+ogaden_mobile/build/
+ogaden_mobile/android/.gradle/
+ogaden_mobile/ios/Pods/
+ogaden_mobile/macos/Pods/
+ogaden_mobile/linux/.dart_tool/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
+# Backup files
+*.backup
+*~
+*.backup
